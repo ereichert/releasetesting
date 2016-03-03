@@ -156,14 +156,7 @@ class ReleaseContext:
         self._repo.heads.master.checkout()
 
     def merge_develop(self):
-        print 'getting master'
-        master = self._repo.heads.master
-        print 'getting develop'
-        develop = self._repo.heads.develop
-        print 'attempting merge'
-        self._repo.index.merge_tree(master, develop)
-        print 'committing merge'
-        self._repo.index.commit('Final release merge commit.')
+        self._repo.git.merge('develop')
 
 def read_cargo_file(release_context):
     with open(release_context.cargo_file) as cargo_file:
