@@ -137,15 +137,19 @@ class ReleaseContext:
         return self._repo.is_dirty()
 
     def commit_release(self, message):
-        index = self._repo.index
-        index.add('*')
-        index.commit(message)
+        # index = self._repo.index
+        print "adding to index"
+        self._repo.git.add(update=True)
+        # index.add(['.'])
+        # index.commit(message)
 
     def tag_release(self, tag, tag_message):
-        self._repo.create_tag(tag, message=tag_message)
+        print "would tag release"
+        # self._repo.create_tag(tag, message=tag_message)
 
     def push_to_develop(self):
-        self._repo.remotes.origin.push('refs/heads/develop:refs/heads/develop', tags=True)
+        print "would push to develop"
+        # self._repo.remotes.origin.push('refs/heads/develop:refs/heads/develop', tags=True)
 
     def is_snapshot_release(self):
         return self.release_type == 'snapshot'
@@ -154,10 +158,12 @@ class ReleaseContext:
         return self.release_type == 'final'
 
     def checkout_master(self):
-        self._repo.heads.master.checkout()
+        print "would checkout master"
+        # self._repo.heads.master.checkout()
 
     def merge_develop(self):
-        self._repo.merge_base('develop')
+        print "would merge develop"
+        # self._repo.merge_base('develop')
 
 def read_cargo_file(release_context):
     with open(release_context.cargo_file) as cargo_file:
