@@ -164,6 +164,8 @@ def read_cargo_file(release_context):
         cargo_content = contoml.loads(cargo_file.read())
         return (cargo_content['package']['version'], cargo_content['package']['name'])
 
+#TODO If the release is a final release the default version number a user is prompted with should have the SNAPSHOT removed.
+#TODO If the release is a final release the user specifies a snapshot version return an error message.
 def confirm_version(current_version):
     version_set = False
     input_version = None
