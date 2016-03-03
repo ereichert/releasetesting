@@ -138,8 +138,7 @@ class ReleaseContext:
 
     def commit_release(self, message):
         self._repo.git.add(update=True)
-        index = self._repo.index
-        index.commit(message)
+        self._repo.index.commit(message)
 
     def tag_release(self, tag, tag_message):
         self._repo.create_tag(tag, message=tag_message)
@@ -157,7 +156,9 @@ class ReleaseContext:
         self._repo.heads.master.checkout()
 
     def merge_develop(self):
-        self._repo.merge_base('develop')
+        master = self._repo.heads.master
+        develop = self._repo.heads.develop
+        self._repo.index.merge_tree(master, develop)
 
 def read_cargo_file(release_context):
     with open(release_context.cargo_file) as cargo_file:
