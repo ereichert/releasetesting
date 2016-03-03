@@ -137,11 +137,9 @@ class ReleaseContext:
         return self._repo.is_dirty()
 
     def commit_release(self, message):
-        # index = self._repo.index
-        print "adding to index"
         self._repo.git.add(update=True)
-        # index.add(['.'])
-        # index.commit(message)
+        index = self._repo.index
+        index.commit(message)
 
     def tag_release(self, tag, tag_message):
         print "would tag release"
