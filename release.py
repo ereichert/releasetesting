@@ -75,9 +75,9 @@ def main():
         release_context.repo_active_branch()
     )
 
-    if not release_context.dry_run:
-        release_context.push_to_develop()
-    print 'Pushed release v{} to develop.'.format(str(release_version))
+    # if not release_context.dry_run:
+    #     release_context.push_to_develop()
+    # print 'Pushed release v{} to develop.'.format(str(release_version))
 
     if release_context.is_snapshot_release():
         snapshot_version = '{}.{}.{}-{}'.format(
@@ -90,16 +90,18 @@ def main():
         print 'Updated files with SNAPSHOT specifier.'
         if not release_context.dry_run:
             release_context.commit_release('Rewrite version to SNAPSHOT.')
-            release_context.push_to_develop()
+            # release_context.push_to_develop()
 
     if release_context.is_final_release():
         release_context.checkout_master()
         release_context.merge_develop()
         #push to master
-        #checkout develop
+        release_context.checkout_develop()
         #bump the patch version - with SNAPSHOT
         #commit
         #push to develop
+
+    release_context.push_to_origin()
 
 # end of main
 
@@ -143,8 +145,8 @@ class ReleaseContext:
     def tag_release(self, tag, tag_message):
         self._repo.create_tag(tag, message=tag_message)
 
-    def push_to_develop(self):
-        self._repo.remotes.origin.push('refs/heads/develop:refs/heads/develop', tags=True)
+    def push_to_origin(self):
+        self._repo.remotes.origin.push('refs/heads:refs/heads', tags=True)
 
     def is_snapshot_release(self):
         return self.release_type == 'snapshot'
@@ -155,6 +157,9 @@ class ReleaseContext:
     def checkout_master(self):
         self._repo.heads.master.checkout()
 
+    def checkout_develop(self):
+        self._repo.heads.develop.checkout()
+
     def merge_develop(self):
         self._repo.git.merge('develop')
 
@@ -163,8 +168,10 @@ def read_cargo_file(release_context):
         cargo_content = contoml.loads(cargo_file.read())
         return (cargo_content['package']['version'], cargo_content['package']['name'])
 
-#TODO If the release is a final release the default version number a user is prompted with should have the SNAPSHOT removed.
-#TODO If the release is a final release the user specifies a snapshot version return an error message.
+#TODO If the release is a final release the default version number a user is prompted with should not have the SNAPSHOT removed.
+#TODO If the release is a final release and the user specifies a snapshot version return an error message.
+#TODO if the release is a snapshot release and the user specifies a final version return an error message.
+#TODO If the release is a snapshot release the default version number a user is prompted with should have the SNAPSHOT specifier.
 def confirm_version(current_version):
     version_set = False
     input_version = None
