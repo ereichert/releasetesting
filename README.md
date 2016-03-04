@@ -12,5 +12,5 @@ pip install -r requirements.txt
 
 ```toml
 [dependencies]
-releasetesting = 0.0.5
+releasetesting = 0.0.6
 ```
