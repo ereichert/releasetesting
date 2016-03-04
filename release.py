@@ -146,7 +146,7 @@ class ReleaseContext:
         self._repo.create_tag(tag, message=tag_message)
 
     def push_to_origin(self):
-        self._repo.remotes.origin.push(tags=True)
+        self._repo.remotes.origin.push('refs/heads/*:refs/heads/*', tags=True)
 
     def is_snapshot_release(self):
         return self.release_type == 'snapshot'
