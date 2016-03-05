@@ -76,12 +76,7 @@ def main():
     )
 
     if release_context.is_snapshot_release():
-        snapshot_version = '{}.{}.{}-{}'.format(
-            release_version.major,
-            release_version.minor,
-            release_version.patch,
-            'SNAPSHOT'
-        )
+        snapshot_version = to_snapshot_version(release_version)
         update_version_in_files(release_context, snapshot_version, package_name)
         print 'Updated files with SNAPSHOT specifier.'
         if not release_context.dry_run:
@@ -91,12 +86,7 @@ def main():
         release_context.checkout_master()
         release_context.merge_develop()
         release_context.checkout_develop()
-        next_version = '{}.{}.{}-{}'.format(
-            release_version.major,
-            release_version.minor,
-            release_version.patch + 1,
-            'SNAPSHOT'
-        )
+        next_version = to_next_patch_snapshot(release_version)
         update_version_in_files(release_context, next_version, package_name)
         print 'Updated files with SNAPSHOT specifier.'
         if not release_context.dry_run:
@@ -186,21 +176,46 @@ def confirm_version(release_context, current_version):
             version_set = False
         if not version_set:
             print '{} does not fit the semantic versioning spec.'.format(input_version)
-    return rewrite_snapshot_version(confirmed_version)
+    return to_snapshot_release_version(confirmed_version)
 
-def rewrite_snapshot_version(version):
-    if version.prerelease and version.prerelease[0].upper() == 'SNAPSHOT':
-        now = datetime.datetime.now()
-        return semantic_version.Version(
-            '{}.{}.{}-{}'.format(
-                version.major,
-                version.minor,
-                version.patch,
-                now.strftime('%Y%m%d%H%M%S')
-            )
+def to_next_patch_snapshot(original_version):
+    return semantic_version.Version(
+        '{}.{}.{}-{}'.format(
+            original_version.major,
+            original_version.minor,
+            original_version.patch + 1,
+            'SNAPSHOT'
         )
-    else:
-        return version
+    )
+
+def to_snapshot_version(original_version):
+    return semantic_version.Version(
+        '{}.{}.{}-{}'.format(
+            original_version.major,
+            original_version.minor,
+            original_version.patch,
+            'SNAPSHOT'
+        )
+    )
+
+def to_snapshot_release_version(original_version, now=datetime.datetime.now()):
+    return semantic_version.Version(
+        '{}.{}.{}-{}'.format(
+            original_version.major,
+            original_version.minor,
+            original_version.patch,
+            now.strftime('%Y%m%d%H%M%S')
+        )
+    )
+
+def to_final_version(original_version):
+    return semantic_version.Version(
+        '{}.{}.{}'.format(
+            original_version.major,
+            original_version.minor,
+            original_version.patch
+        )
+    )
 
 def update_version_in_files(release_context, version, package_name):
     version_string = str(version)

@@ -4,3 +4,4 @@ releasetesting/
 .cache/
 __pycache__/
 test_release.pyc
+release.pyc
