@@ -1,3 +1,4 @@
 contoml==0.32
 semantic_version==2.5.0
 gitpython==1.0.2
+pytest==2.9.0
