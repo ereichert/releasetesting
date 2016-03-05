@@ -93,6 +93,7 @@ def main():
             release_context.commit_release('Bumped version to {}.'.format(next_version))
 
     if not release_context.dry_run:
+        print "Pushing release to origin."
         release_context.push_to_origin()
 
 # end of main
