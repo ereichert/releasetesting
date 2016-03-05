@@ -3,3 +3,4 @@ releasetesting/
 .DS_Store
 .cache/
 __pycache__/
+test_release.pyc
