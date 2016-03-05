@@ -12,5 +12,5 @@ pip install -r requirements.txt
 
 ```toml
 [dependencies]
-releasetesting = 0.0.9-20160304223548
+releasetesting = 0.0.9-SNAPSHOT
 ```
