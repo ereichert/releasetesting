@@ -179,7 +179,7 @@ def confirm_version(release_context, current_version):
             print '{} does not fit the semantic versioning spec.'.format(input_version)
     return to_snapshot_release_version(confirmed_version)
 
-def to_next_patch_snapshot(original_version):
+def to_next_patch_snapshot_version(original_version):
     return semantic_version.Version(
         '{}.{}.{}-{}'.format(
             original_version.major,
@@ -209,7 +209,7 @@ def to_snapshot_release_version(original_version, now=datetime.datetime.now()):
         )
     )
 
-def to_final_version(original_version):
+def to_final_release_version(original_version):
     return semantic_version.Version(
         '{}.{}.{}'.format(
             original_version.major,
