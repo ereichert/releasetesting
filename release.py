@@ -75,10 +75,6 @@ def main():
         release_context.repo_active_branch()
     )
 
-    # if not release_context.dry_run:
-    #     release_context.push_to_develop()
-    # print 'Pushed release v{} to develop.'.format(str(release_version))
-
     if release_context.is_snapshot_release():
         snapshot_version = '{}.{}.{}-{}'.format(
             release_version.major,
@@ -90,18 +86,17 @@ def main():
         print 'Updated files with SNAPSHOT specifier.'
         if not release_context.dry_run:
             release_context.commit_release('Rewrite version to SNAPSHOT.')
-            # release_context.push_to_develop()
 
     if release_context.is_final_release():
         release_context.checkout_master()
         release_context.merge_develop()
-        #push to master
         release_context.checkout_develop()
         #bump the patch version - with SNAPSHOT
         #commit
         #push to develop
 
-    release_context.push_to_origin()
+    if not release_context.dry_run:
+        release_context.push_to_origin()
 
 # end of main
 
