@@ -42,7 +42,7 @@ def main():
         sys.exit(1)
 
     starting_version, package_name = read_cargo_file(release_context)
-    release_version = confirm_version(starting_version)
+    release_version = confirm_version(release_context, starting_version)
     print 'Releasing {} v{}'.format(package_name, str(release_version))
 
     update_version_in_files(release_context, release_version, package_name)
@@ -174,7 +174,7 @@ def read_cargo_file(release_context):
 #TODO If the release is a final release and the user specifies a snapshot version return an error message.
 #TODO if the release is a snapshot release and the user specifies a final version return an error message.
 #TODO If the release is a snapshot release the default version number a user is prompted with should have the SNAPSHOT specifier.
-def confirm_version(current_version):
+def confirm_version(release_context, current_version):
     version_set = False
     input_version = None
     confirmed_version = None
