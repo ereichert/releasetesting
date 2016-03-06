@@ -169,11 +169,12 @@ def read_cargo_file(release_context):
 
 def confirm_version(release_context, current_version):
     confirmed_version = None
+    presentation_version = to_presentation_version(release_context, current_version)
     while confirmed_version == None:
         # We confirm current_version if the user does not specify a version
         # because current_version may not be valid for the type of release the
         # user specified.
-        input_version = raw_input('Set version [{}]: '.format(to_presentation_version(release_context, current_version))) or str(current_version)
+        input_version = raw_input('Set version [{}]: '.format(presentation_version)) or str(presentation_version)
         confirmed_version = is_valid_proposed_version(release_context, input_version)
         if confirmed_version == None:
             print '{} does not fit the semantic versioning spec or is not valid given the specified release type of {}.'.format(input_version, release_context.release_type)
