@@ -10,6 +10,12 @@ import re
 import subprocess
 import datetime
 
+RELEASE_TYPE_SNAPSHOT = 'snapshot'
+RELEASE_TYPE_FINAL = 'final'
+SNAPSHOT = 'SNAPSHOT'
+BRANCH_DEVELOP = 'develop'
+BUILD_CMD = 'cargo build --release'
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('release_type', help='[ snapshot | final ]')
@@ -29,11 +35,11 @@ def main():
         args.dry_run
     )
 
-    if release_context.release_type != 'snapshot' and release_context.release_type != 'final':
+    if release_context.release_type != RELEASE_TYPE_SNAPSHOT and release_context.release_type != RELEASE_TYPE_FINAL:
         print 'You must specify the relase type: [snapshot xor final]'
         sys.exit(1)
 
-    if not release_context.disable_checks and release_context.repo_active_branch().lower() != 'develop':
+    if not release_context.disable_checks and release_context.repo_active_branch().lower() != BRANCH_DEVELOP:
         print 'You must be on the develop branch in order to do a release. You are on branch {}'.format(release_context.repo_active_branch())
         sys.exit(1)
 
@@ -142,10 +148,10 @@ class ReleaseContext:
         self._repo.remotes.origin.push('refs/heads/*:refs/heads/*', tags=True)
 
     def is_snapshot_release(self):
-        return self.release_type == 'snapshot'
+        return self.release_type == RELEASE_TYPE_SNAPSHOT
 
     def is_final_release(self):
-        return self.release_type == 'final'
+        return self.release_type == RELEASE_TYPE_FINAL
 
     def checkout_master(self):
         self._repo.heads.master.checkout()
@@ -154,7 +160,7 @@ class ReleaseContext:
         self._repo.heads.develop.checkout()
 
     def merge_develop(self):
-        self._repo.git.merge('develop')
+        self._repo.git.merge(BRANCH_DEVELOP)
 
 def read_cargo_file(release_context):
     with open(release_context.cargo_file) as cargo_file:
@@ -189,7 +195,7 @@ def is_valid_proposed_version(release_context, proposed_version):
         if release_context.is_snapshot_release():
             validations.append(
                 sv.prerelease
-                and sv.prerelease[0].upper() == 'SNAPSHOT'
+                and sv.prerelease[0].upper() == SNAPSHOT
             )
         else:
             validations.append(
@@ -207,7 +213,7 @@ def to_next_patch_snapshot_version(original_version):
             original_version.major,
             original_version.minor,
             original_version.patch + 1,
-            'SNAPSHOT'
+            SNAPSHOT
         )
     )
 
@@ -217,7 +223,7 @@ def to_snapshot_version(original_version):
             original_version.major,
             original_version.minor,
             original_version.patch,
-            'SNAPSHOT'
+            SNAPSHOT
         )
     )
 
@@ -273,7 +279,7 @@ def update_readme_file_version(release_context, package_name, version):
 
 def attempt_build():
     try:
-        retcode = subprocess.call('cargo build --release', shell=True)
+        retcode = subprocess.call(BUILD_CMD, shell=True)
         if retcode == 0:
             return (0, None)
         else:
