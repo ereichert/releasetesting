@@ -3,7 +3,23 @@ import semantic_version
 import datetime
 import mock
 
-def test_confirm_version_require_user_retry_given_snapshot_release_spec_and_final_user_input():
+def test_confirm_version_should_require_user_retry_given_invalid_semver_user_input():
+    release_context = release.ReleaseContext(
+        release_type = 'snapshot',
+        cargo_file = 'Cargo.toml',
+        version_file = 'version.txt',
+        readme_file = 'README.md',
+        disable_checks = False,
+        dry_run = False
+    )
+    original_version = semantic_version.Version('1.0.0-SNAPSHOT')
+    with mock.patch('__builtin__.raw_input', side_effect=['1.1', '1', '1.1.0-SNAPSHOT']):
+        confirmed_version = release.confirm_version(release_context, original_version)
+
+        assert confirmed_version <= semantic_version.Version('1.1.0')
+
+
+def test_confirm_version_should_require_user_retry_given_snapshot_release_spec_and_final_user_input():
     release_context = release.ReleaseContext(
         release_type = 'snapshot',
         cargo_file = 'Cargo.toml',
@@ -18,7 +34,7 @@ def test_confirm_version_require_user_retry_given_snapshot_release_spec_and_fina
 
         assert confirmed_version <= semantic_version.Version('1.1.0')
 
-def test_confirm_version_require_user_retry_given_final_release_spec_and_snapshot_user_input():
+def test_confirm_version_should_require_user_retry_given_final_release_spec_and_snapshot_user_input():
     release_context = release.ReleaseContext(
         release_type = 'final',
         cargo_file = 'Cargo.toml',
