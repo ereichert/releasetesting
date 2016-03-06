@@ -102,7 +102,7 @@ class ReleaseContext:
     def __init__(
         self,
         release_type,
-        config_file,
+        cargo_file,
         version_file,
         readme_file,
         disable_checks,
@@ -111,7 +111,7 @@ class ReleaseContext:
         # Either final or snapshot
         self.release_type = release_type.lower()
         # This should be the path to the Cargo.toml file.
-        self.cargo_file = config_file
+        self.cargo_file = cargo_file
         # This should be the path to the version.txt file.
         self.version_file = version_file
         # This should be the path to the README.md file.
@@ -162,8 +162,6 @@ def read_cargo_file(release_context):
         return (cargo_content['package']['version'], cargo_content['package']['name'])
 
 #TODO If the release is a final release the default version number a user is prompted with should not have the SNAPSHOT removed.
-#TODO If the release is a final release and the user specifies a snapshot version return an error message.
-#TODO if the release is a snapshot release and the user specifies a final version return an error message.
 #TODO If the release is a snapshot release the default version number a user is prompted with should have the SNAPSHOT specifier.
 def confirm_version(release_context, current_version):
     version_set = False
@@ -171,6 +169,7 @@ def confirm_version(release_context, current_version):
     confirmed_version = None
     while not version_set:
         input_version = raw_input('Set version [{}]: '.format(current_version)) or current_version
+        TODO get rid of the following in favor of is_valid_proposed_version
         version_set = semantic_version.validate(input_version)
         confirmed_version = semantic_version.Version(input_version)
         if confirmed_version.prerelease and confirmed_version.prerelease[0].upper() != 'SNAPSHOT':
@@ -178,6 +177,27 @@ def confirm_version(release_context, current_version):
         if not version_set:
             print '{} does not fit the semantic versioning spec.'.format(input_version)
     return to_snapshot_release_version(confirmed_version)
+
+#TODO Create consts for SNAPSHOT, final, snapshot
+def is_valid_proposed_version(release_context, proposed_version):
+    validations = []
+    sv = None
+    if semantic_version.validate(proposed_version):
+        sv = semantic_version.Version(proposed_version)
+        if release_context.is_snapshot_release():
+            validations.append(
+                sv.prerelease
+                and sv.prerelease[0].upper() == 'SNAPSHOT'
+            )
+        else:
+            validations.append(
+                not sv.prerelease
+            )
+
+    if all(v for v in validations):
+        return sv
+    else:
+        None
 
 def to_next_patch_snapshot_version(original_version):
     return semantic_version.Version(
