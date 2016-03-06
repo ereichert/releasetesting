@@ -164,19 +164,17 @@ def read_cargo_file(release_context):
 #TODO If the release is a final release the default version number a user is prompted with should not have the SNAPSHOT removed.
 #TODO If the release is a snapshot release the default version number a user is prompted with should have the SNAPSHOT specifier.
 def confirm_version(release_context, current_version):
-    version_set = False
-    input_version = None
     confirmed_version = None
-    while not version_set:
+    while confirmed_version == None:
         input_version = raw_input('Set version [{}]: '.format(current_version)) or current_version
-        TODO get rid of the following in favor of is_valid_proposed_version
-        version_set = semantic_version.validate(input_version)
-        confirmed_version = semantic_version.Version(input_version)
-        if confirmed_version.prerelease and confirmed_version.prerelease[0].upper() != 'SNAPSHOT':
-            version_set = False
-        if not version_set:
+        confirmed_version = is_valid_proposed_version
+        if confirmed_version == None:
             print '{} does not fit the semantic versioning spec.'.format(input_version)
-    return to_snapshot_release_version(confirmed_version)
+
+    if release_context.is_snapshot_release():
+        return to_snapshot_release_version(confirmed_version)
+    else:
+        return confirmed_version
 
 #TODO Create consts for SNAPSHOT, final, snapshot
 def is_valid_proposed_version(release_context, proposed_version):
