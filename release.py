@@ -161,12 +161,10 @@ def read_cargo_file(release_context):
         cargo_content = contoml.loads(cargo_file.read())
         return (cargo_content['package']['version'], cargo_content['package']['name'])
 
-#TODO If the release is a final release the default version number a user is prompted with should not have the SNAPSHOT removed.
-#TODO If the release is a snapshot release the default version number a user is prompted with should have the SNAPSHOT specifier.
 def confirm_version(release_context, current_version):
     confirmed_version = None
     while confirmed_version == None:
-        input_version = raw_input('Set version [{}]: '.format(current_version)) or current_version
+        input_version = raw_input('Set version [{}]: '.format(to_presentation_version(current_version))) or current_version
         confirmed_version = is_valid_proposed_version(release_version, input_version)
         if confirmed_version == None:
             print '{} does not fit the semantic versioning spec.'.format(input_version)
@@ -175,6 +173,12 @@ def confirm_version(release_context, current_version):
         return to_snapshot_release_version(confirmed_version)
     else:
         return confirmed_version
+
+def to_presentation_version(release_context, version):
+    if release_context.is_snapshot_release():
+        return to_snapshot_version(version)
+    else:
+        return to_final_release_version(version)
 
 #TODO Create consts for SNAPSHOT, final, snapshot
 def is_valid_proposed_version(release_context, proposed_version):

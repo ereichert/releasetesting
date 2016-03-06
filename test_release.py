@@ -2,6 +2,67 @@ import release
 import semantic_version
 import datetime
 
+def test_to_presentation_version_converts_a_final_version_to_a_final_version_when_the_context_specifies_a_final_release():
+    release_context = release.ReleaseContext(
+        release_type = 'final',
+        cargo_file = 'Cargo.toml',
+        version_file = 'version.txt',
+        readme_file = 'README.md',
+        disable_checks = False,
+        dry_run = False
+    )
+    original_version = semantic_version.Version('1.0.0')
+
+    presentation_version = release.to_presentation_version(release_context, original_version)
+
+    assert presentation_version == semantic_version.Version('1.0.0')
+
+def test_to_presentation_version_converts_a_final_version_to_a_snapshot_version_when_the_context_specifies_a_snapshot_release():
+    release_context = release.ReleaseContext(
+        release_type = 'snapshot',
+        cargo_file = 'Cargo.toml',
+        version_file = 'version.txt',
+        readme_file = 'README.md',
+        disable_checks = False,
+        dry_run = False
+    )
+    original_version = semantic_version.Version('1.0.0')
+
+    presentation_version = release.to_presentation_version(release_context, original_version)
+
+    assert presentation_version == semantic_version.Version('1.0.0-SNAPSHOT')
+
+def test_to_presentation_version_converts_a_snapshot_version_to_a_final_version_when_the_context_specifies_a_final_release():
+    release_context = release.ReleaseContext(
+        release_type = 'final',
+        cargo_file = 'Cargo.toml',
+        version_file = 'version.txt',
+        readme_file = 'README.md',
+        disable_checks = False,
+        dry_run = False
+    )
+    original_version = semantic_version.Version('1.0.0-SNAPSHOT')
+
+    presentation_version = release.to_presentation_version(release_context, original_version)
+
+    assert presentation_version == semantic_version.Version('1.0.0')
+
+
+def test_to_presentation_version_converts_a_snapshot_version_to_a_snapshot_version_when_the_context_specifies_a_snapshot_release():
+    release_context = release.ReleaseContext(
+        release_type = 'snapshot',
+        cargo_file = 'Cargo.toml',
+        version_file = 'version.txt',
+        readme_file = 'README.md',
+        disable_checks = False,
+        dry_run = False
+    )
+    original_version = semantic_version.Version('1.0.0-SNAPSHOT')
+
+    presentation_version = release.to_presentation_version(release_context, original_version)
+
+    assert presentation_version == semantic_version.Version('1.0.0-SNAPSHOT')
+
 def test_is_valid_proposed_version_returns_false_when_proposed_is_not_semantic_version():
     release_context = release.ReleaseContext(
         release_type = 'final',
