@@ -176,7 +176,7 @@ def confirm_version(release_context, current_version):
         input_version = raw_input('Set version [{}]: '.format(to_presentation_version(release_context, current_version))) or str(current_version)
         confirmed_version = is_valid_proposed_version(release_context, input_version)
         if confirmed_version == None:
-            print '{} does not fit the semantic versioning spec.'.format(input_version)
+            print '{} does not fit the semantic versioning spec or is not valid given the specified release type of {}.'.format(input_version, release_context.release_type)
 
     if release_context.is_snapshot_release():
         return to_snapshot_release_version(confirmed_version)
