@@ -170,6 +170,9 @@ def read_cargo_file(release_context):
 def confirm_version(release_context, current_version):
     confirmed_version = None
     while confirmed_version == None:
+        # We confirm current_version if the user does not specify a version
+        # because current_version may not be valid for the type of release the
+        # user specified.
         input_version = raw_input('Set version [{}]: '.format(to_presentation_version(release_context, current_version))) or str(current_version)
         confirmed_version = is_valid_proposed_version(release_context, input_version)
         if confirmed_version == None:
