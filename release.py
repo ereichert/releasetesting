@@ -186,7 +186,6 @@ def to_presentation_version(release_context, version):
     else:
         return to_final_release_version(version)
 
-#TODO Create consts for SNAPSHOT, final, snapshot
 def is_valid_proposed_version(release_context, proposed_version):
     validations = []
     sv = None
