@@ -42,7 +42,7 @@ def main():
         sys.exit(1)
 
     starting_version, package_name = read_cargo_file(release_context)
-    release_version = confirm_version(release_context, starting_version)
+    release_version = confirm_version(release_context, semantic_version.Version(starting_version))
     print 'Releasing {} v{}'.format(package_name, str(release_version))
 
     update_version_in_files(release_context, release_version, package_name)
