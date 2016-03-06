@@ -167,7 +167,7 @@ def confirm_version(release_context, current_version):
     confirmed_version = None
     while confirmed_version == None:
         input_version = raw_input('Set version [{}]: '.format(current_version)) or current_version
-        confirmed_version = is_valid_proposed_version(input_version)
+        confirmed_version = is_valid_proposed_version(release_version, input_version)
         if confirmed_version == None:
             print '{} does not fit the semantic versioning spec.'.format(input_version)
 
