@@ -12,13 +12,14 @@ import datetime
 
 RELEASE_TYPE_SNAPSHOT = 'snapshot'
 RELEASE_TYPE_FINAL = 'final'
+RELEASE_TYPE_TEST_FINAL = 'testfinal'
 SNAPSHOT = 'SNAPSHOT'
 BRANCH_DEVELOP = 'develop'
 BUILD_CMD = 'cargo build --release'
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('release_type', help='[ snapshot | final ]')
+    parser.add_argument('release_type', help='[ snapshot | final | testfinal]')
     parser.add_argument('--cargo-file', default='Cargo.toml', help='The Cargo.toml file to use. Default = ./Cargo.toml')
     parser.add_argument('--version-file', default='./src/version.txt', help='The version.txt file to update. Default = ./src/version.txt')
     parser.add_argument('--readme-file', default='README.md', help='The readme file to update. Default = ./README.md')
@@ -35,8 +36,10 @@ def main():
         args.dry_run
     )
 
-    if release_context.release_type != RELEASE_TYPE_SNAPSHOT and release_context.release_type != RELEASE_TYPE_FINAL:
-        print 'You must specify the relase type: [snapshot xor final]'
+    if (release_context.release_type != RELEASE_TYPE_SNAPSHOT
+        and release_context.release_type != RELEASE_TYPE_FINAL
+        and release_context.release_type != RELEASE_TYPE_TEST_FINAL):
+        print 'You must specify the relase type: [snapshot xor final xor testfinal]'
         sys.exit(1)
 
     if not release_context.disable_checks and release_context.repo_active_branch().lower() != BRANCH_DEVELOP:
@@ -88,8 +91,11 @@ def main():
         if not release_context.dry_run:
             release_context.commit_release('Rewrite version to SNAPSHOT.')
 
-    if release_context.is_final_release():
-        release_context.checkout_master()
+    if release_context.is_final_release() or release_context.is_test_final_release():
+        if release_context.is_final_release():
+            release_context.checkout_master()
+        else:
+            release_context.checkout_test_master()
         release_context.merge_develop()
         release_context.checkout_develop()
         next_version = to_next_patch_snapshot(release_version)
@@ -153,8 +159,14 @@ class ReleaseContext:
     def is_final_release(self):
         return self.release_type == RELEASE_TYPE_FINAL
 
+    def is_test_final_release(self):
+        return self.release_type == RELEASE_TYPE_TEST_FINAL
+
     def checkout_master(self):
         self._repo.heads.master.checkout()
+
+    def checkout_test_master(self):
+        self._repo.heads.testmaster.checkout()
 
     def checkout_develop(self):
         self._repo.heads.develop.checkout()
@@ -181,6 +193,8 @@ def confirm_version(release_context, current_version):
 
     if release_context.is_snapshot_release():
         return to_snapshot_release_version(confirmed_version)
+    else if release_context.is_test_final_release():
+        return to_test_final_release_version(confirmed_version)
     else:
         return confirmed_version
 
@@ -237,6 +251,16 @@ def to_snapshot_release_version(original_version, now=datetime.datetime.now()):
             original_version.minor,
             original_version.patch,
             now.strftime('%Y%m%d%H%M%S')
+        )
+    )
+
+def to_test_final_release_version(original_version):
+    return semantic_version.Version(
+        '{}.{}.{}-{}'.format(
+            original_version.major,
+            original_version.minor,
+            original_version.patch,
+            'TESTFINALRELEASE'
         )
     )
 
