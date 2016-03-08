@@ -98,7 +98,7 @@ def main():
             release_context.checkout_test_master()
         release_context.merge_develop()
         release_context.checkout_develop()
-        next_version = to_next_patch_snapshot(release_version)
+        next_version = to_next_patch_snapshot_version(release_version)
         update_version_in_files(release_context, next_version, package_name)
         print 'Updated files with SNAPSHOT specifier.'
         if not release_context.dry_run:
