@@ -193,7 +193,7 @@ def confirm_version(release_context, current_version):
 
     if release_context.is_snapshot_release():
         return to_snapshot_release_version(confirmed_version)
-    else if release_context.is_test_final_release():
+    elif release_context.is_test_final_release():
         return to_test_final_release_version(confirmed_version)
     else:
         return confirmed_version
