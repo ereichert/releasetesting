@@ -1,6 +1,6 @@
 [package]
 name = "releasetesting"
-version = "0.0.11-TESTFINALRELEASE"
+version = "0.0.12-SNAPSHOT"
 authors = ["eric@reichertconsulting.com"]
 
 [dependencies]
