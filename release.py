@@ -12,6 +12,7 @@ import datetime
 
 RELEASE_TYPE_SNAPSHOT = 'snapshot'
 RELEASE_TYPE_FINAL = 'final'
+# testfinal is used to test final releases without committing to master.
 RELEASE_TYPE_TEST_FINAL = 'testfinal'
 SNAPSHOT = 'SNAPSHOT'
 BRANCH_DEVELOP = 'develop'
