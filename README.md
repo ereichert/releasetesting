@@ -30,5 +30,5 @@ The following is used for testing the script using the --testfinal option.
 
 ```toml
 [dependencies]
-vors = 0.0.12-SNAPSHOT
+vors = 1.0.0
 ```
