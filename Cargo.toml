@@ -1,6 +1,6 @@
 [package]
 name = "vors"
-version = "1.0.0"
+version = "1.0.1-SNAPSHOT"
 authors = ["eric@reichertconsulting.com"]
 
 [dependencies]
