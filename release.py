@@ -10,9 +10,17 @@ import re
 import subprocess
 import datetime
 
+RELEASE_TYPE_SNAPSHOT = 'snapshot'
+RELEASE_TYPE_FINAL = 'final'
+# testfinal is used to test final releases without committing to master.
+RELEASE_TYPE_TEST_FINAL = 'testfinal'
+SNAPSHOT = 'SNAPSHOT'
+BRANCH_DEVELOP = 'develop'
+BUILD_CMD = 'cargo build --release'
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('release_type', help='[ snapshot | final ]')
+    parser.add_argument('release_type', help='[ snapshot | final | testfinal]')
     parser.add_argument('--cargo-file', default='Cargo.toml', help='The Cargo.toml file to use. Default = ./Cargo.toml')
     parser.add_argument('--version-file', default='./src/version.txt', help='The version.txt file to update. Default = ./src/version.txt')
     parser.add_argument('--readme-file', default='README.md', help='The readme file to update. Default = ./README.md')
@@ -29,11 +37,13 @@ def main():
         args.dry_run
     )
 
-    if release_context.release_type != 'snapshot' and release_context.release_type != 'final':
-        print 'You must specify the relase type: [snapshot xor final]'
+    if (release_context.release_type != RELEASE_TYPE_SNAPSHOT
+        and release_context.release_type != RELEASE_TYPE_FINAL
+        and release_context.release_type != RELEASE_TYPE_TEST_FINAL):
+        print 'You must specify the relase type: [snapshot xor final xor testfinal]'
         sys.exit(1)
 
-    if not release_context.disable_checks and release_context.repo_active_branch().lower() != 'develop':
+    if not release_context.disable_checks and release_context.repo_active_branch().lower() != BRANCH_DEVELOP:
         print 'You must be on the develop branch in order to do a release. You are on branch {}'.format(release_context.repo_active_branch())
         sys.exit(1)
 
@@ -42,7 +52,7 @@ def main():
         sys.exit(1)
 
     starting_version, package_name = read_cargo_file(release_context)
-    release_version = confirm_version(starting_version)
+    release_version = confirm_version(release_context, semantic_version.Version(starting_version))
     print 'Releasing {} v{}'.format(package_name, str(release_version))
 
     update_version_in_files(release_context, release_version, package_name)
@@ -76,33 +86,27 @@ def main():
     )
 
     if release_context.is_snapshot_release():
-        snapshot_version = '{}.{}.{}-{}'.format(
-            release_version.major,
-            release_version.minor,
-            release_version.patch,
-            'SNAPSHOT'
-        )
+        snapshot_version = to_snapshot_version(release_version)
         update_version_in_files(release_context, snapshot_version, package_name)
         print 'Updated files with SNAPSHOT specifier.'
         if not release_context.dry_run:
             release_context.commit_release('Rewrite version to SNAPSHOT.')
 
-    if release_context.is_final_release():
-        release_context.checkout_master()
+    if release_context.is_final_release() or release_context.is_test_final_release():
+        if release_context.is_final_release():
+            release_context.checkout_master()
+        else:
+            release_context.checkout_test_master()
         release_context.merge_develop()
         release_context.checkout_develop()
-        next_version = '{}.{}.{}-{}'.format(
-            release_version.major,
-            release_version.minor,
-            release_version.patch + 1,
-            'SNAPSHOT'
-        )
+        next_version = to_next_patch_snapshot_version(release_version)
         update_version_in_files(release_context, next_version, package_name)
         print 'Updated files with SNAPSHOT specifier.'
         if not release_context.dry_run:
             release_context.commit_release('Bumped version to {}.'.format(next_version))
 
     if not release_context.dry_run:
+        print "Pushing release to origin."
         release_context.push_to_origin()
 
 # end of main
@@ -111,7 +115,7 @@ class ReleaseContext:
     def __init__(
         self,
         release_type,
-        config_file,
+        cargo_file,
         version_file,
         readme_file,
         disable_checks,
@@ -120,7 +124,7 @@ class ReleaseContext:
         # Either final or snapshot
         self.release_type = release_type.lower()
         # This should be the path to the Cargo.toml file.
-        self.cargo_file = config_file
+        self.cargo_file = cargo_file
         # This should be the path to the version.txt file.
         self.version_file = version_file
         # This should be the path to the README.md file.
@@ -151,56 +155,124 @@ class ReleaseContext:
         self._repo.remotes.origin.push('refs/heads/*:refs/heads/*', tags=True)
 
     def is_snapshot_release(self):
-        return self.release_type == 'snapshot'
+        return self.release_type == RELEASE_TYPE_SNAPSHOT
 
     def is_final_release(self):
-        return self.release_type == 'final'
+        return self.release_type == RELEASE_TYPE_FINAL
+
+    def is_test_final_release(self):
+        return self.release_type == RELEASE_TYPE_TEST_FINAL
 
     def checkout_master(self):
         self._repo.heads.master.checkout()
+
+    def checkout_test_master(self):
+        self._repo.heads.testmaster.checkout()
 
     def checkout_develop(self):
         self._repo.heads.develop.checkout()
 
     def merge_develop(self):
-        self._repo.git.merge('develop')
+        self._repo.git.merge(BRANCH_DEVELOP)
 
 def read_cargo_file(release_context):
     with open(release_context.cargo_file) as cargo_file:
         cargo_content = contoml.loads(cargo_file.read())
         return (cargo_content['package']['version'], cargo_content['package']['name'])
 
-#TODO If the release is a final release the default version number a user is prompted with should not have the SNAPSHOT removed.
-#TODO If the release is a final release and the user specifies a snapshot version return an error message.
-#TODO if the release is a snapshot release and the user specifies a final version return an error message.
-#TODO If the release is a snapshot release the default version number a user is prompted with should have the SNAPSHOT specifier.
-def confirm_version(current_version):
-    version_set = False
-    input_version = None
+def confirm_version(release_context, current_version):
     confirmed_version = None
-    while not version_set:
-        input_version = raw_input('Set version [{}]: '.format(current_version)) or current_version
-        version_set = semantic_version.validate(input_version)
-        confirmed_version = semantic_version.Version(input_version)
-        if confirmed_version.prerelease and confirmed_version.prerelease[0].upper() != 'SNAPSHOT':
-            version_set = False
-        if not version_set:
-            print '{} does not fit the semantic versioning spec.'.format(input_version)
-    return rewrite_snapshot_version(confirmed_version)
+    presentation_version = to_presentation_version(release_context, current_version)
+    while confirmed_version == None:
+        # We confirm current_version if the user does not specify a version
+        # because current_version may not be valid for the type of release the
+        # user specified.
+        input_version = raw_input('Set version [{}]: '.format(presentation_version)) or str(presentation_version)
+        confirmed_version = is_valid_proposed_version(release_context, input_version)
+        if confirmed_version == None:
+            print '{} does not fit the semantic versioning spec or is not valid given the specified release type of {}.'.format(input_version, release_context.release_type)
 
-def rewrite_snapshot_version(version):
-    if version.prerelease and version.prerelease[0].upper() == 'SNAPSHOT':
-        now = datetime.datetime.now()
-        return semantic_version.Version(
-            '{}.{}.{}-{}'.format(
-                version.major,
-                version.minor,
-                version.patch,
-                now.strftime('%Y%m%d%H%M%S')
-            )
-        )
+    if release_context.is_snapshot_release():
+        return to_snapshot_release_version(confirmed_version)
+    elif release_context.is_test_final_release():
+        return to_test_final_release_version(confirmed_version)
     else:
-        return version
+        return confirmed_version
+
+def to_presentation_version(release_context, version):
+    if release_context.is_snapshot_release():
+        return to_snapshot_version(version)
+    else:
+        return to_final_release_version(version)
+
+def is_valid_proposed_version(release_context, proposed_version):
+    validations = []
+    sv = None
+    if semantic_version.validate(proposed_version):
+        sv = semantic_version.Version(proposed_version)
+        if release_context.is_snapshot_release():
+            validations.append(
+                sv.prerelease
+                and sv.prerelease[0].upper() == SNAPSHOT
+            )
+        else:
+            validations.append(
+                not sv.prerelease
+            )
+
+    if all(v for v in validations):
+        return sv
+    else:
+        None
+
+def to_next_patch_snapshot_version(original_version):
+    return semantic_version.Version(
+        '{}.{}.{}-{}'.format(
+            original_version.major,
+            original_version.minor,
+            original_version.patch + 1,
+            SNAPSHOT
+        )
+    )
+
+def to_snapshot_version(original_version):
+    return semantic_version.Version(
+        '{}.{}.{}-{}'.format(
+            original_version.major,
+            original_version.minor,
+            original_version.patch,
+            SNAPSHOT
+        )
+    )
+
+def to_snapshot_release_version(original_version, now=datetime.datetime.now()):
+    return semantic_version.Version(
+        '{}.{}.{}-{}'.format(
+            original_version.major,
+            original_version.minor,
+            original_version.patch,
+            now.strftime('%Y%m%d%H%M%S')
+        )
+    )
+
+def to_test_final_release_version(original_version):
+    return semantic_version.Version(
+        '{}.{}.{}-{}'.format(
+            original_version.major,
+            original_version.minor,
+            original_version.patch,
+            'TESTFINALRELEASE'
+        )
+    )
+
+def to_final_release_version(original_version):
+    return semantic_version.Version(
+        '{}.{}.{}'.format(
+            original_version.major,
+            original_version.minor,
+            original_version.patch
+        )
+    )
 
 def update_version_in_files(release_context, version, package_name):
     version_string = str(version)
@@ -235,7 +307,7 @@ def update_readme_file_version(release_context, package_name, version):
 
 def attempt_build():
     try:
-        retcode = subprocess.call('cargo build --release', shell=True)
+        retcode = subprocess.call(BUILD_CMD, shell=True)
         if retcode == 0:
             return (0, None)
         else:
