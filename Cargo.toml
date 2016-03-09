@@ -1,5 +1,5 @@
 [package]
-name = "releasetesting"
+name = "vors"
 version = "0.0.12-SNAPSHOT"
 authors = ["eric@reichertconsulting.com"]
 
